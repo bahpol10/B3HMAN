@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- B3HMAN mark: a bold geometric "B" in electric teal, with one warm-amber
+         dot. Drawn from scratch for this fork; nothing of the upstream "A"
+         shield mark remains. -->
+    <group android:scaleX="0.72" android:scaleY="0.72" android:pivotX="54" android:pivotY="54">
+        <!-- Stem -->
+        <path
+            android:fillColor="#00E5C0"
+            android:pathData="M28,18h14v72H28Z" />
+        <!-- Top bowl -->
+        <path
+            android:fillColor="#00E5C0"
+            android:pathData="M42,18h20a15,15 0 0 1 0,30H42Z" />
+        <!-- Bottom bowl (slightly larger) -->
+        <path
+            android:fillColor="#00E5C0"
+            android:pathData="M42,48h24a21,21 0 0 1 0,42H42Z" />
+        <!-- Amber dot -->
+        <path
+            android:fillColor="#FFB020"
+            android:pathData="M84,20h8v8h-8Z" />
+    </group>
+</vector>
