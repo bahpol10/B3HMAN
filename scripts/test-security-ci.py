@@ -119,18 +119,28 @@ sys.exit(9)
     def test_both_security_floors(self):
         self.versions()
         self.assertEqual(self.patch().returncode, 0)
-        self.assertIn('0.11.18', self.lock.read_text())
+        self.assertIn('0.11.19', self.lock.read_text())
         self.assertIn('0.23.46', self.lock.read_text())
         self.assertEqual(len((self.root / 'calls').read_text().splitlines()), 2)
 
-    def test_previous_tls_fix_is_upgraded_for_new_advisories(self):
-        self.versions('0.11.18', '0.23.45')
+    def test_quinn_udp_security_floor(self):
+        self.lock.write_text('version = 4\n[[package]]\nname = "quinn-udp"\nversion = "0.5.15"\n')
         self.assertEqual(self.patch().returncode, 0)
+        self.assertIn('0.5.16', self.lock.read_text())
+        self.assertEqual(len((self.root / 'calls').read_text().splitlines()), 1)
+        (self.root / 'calls').unlink()
+        self.assertEqual(self.patch().returncode, 0)
+        self.assertFalse((self.root / 'calls').exists())
+
+    def test_previous_tls_fix_is_upgraded_for_new_advisories(self):
+        self.versions('0.11.19', '0.23.45')
+        self.assertEqual(self.patch().returncode, 0)
+        self.assertIn('0.11.19', self.lock.read_text())
         self.assertIn('0.23.46', self.lock.read_text())
         self.assertEqual(len((self.root / 'calls').read_text().splitlines()), 1)
 
     def test_fixed_lock_idempotent(self):
-        self.versions('0.11.18', '0.23.46')
+        self.versions('0.11.19', '0.23.46')
         self.assertEqual(self.patch().returncode, 0)
         self.assertFalse((self.root / 'calls').exists())
 
@@ -213,7 +223,7 @@ sys.exit(9)
         self.assertIn('cp "${crate}/Cargo.lock" "${RUNNER_TEMP}/aether-audit/built-engine/Cargo.lock"', build)
 
     def test_unreviewed_prerelease(self):
-        self.versions('0.11.18-rc.1')
+        self.versions('0.11.19-rc.1')
         self.assertNotEqual(self.patch().returncode, 0)
 
 
