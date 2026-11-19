@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -112,7 +113,7 @@ fun ConnectButton(
                 .size(DISC)
                 .clip(CircleShape)
                 .background(
-                    if (connected) B3hTeal else Brush.linearGradient(
+                    if (connected) SolidColor(B3hTeal) else Brush.linearGradient(
                         listOf(Graphite800, Color(0xFF131816)),
                     ),
                 )
