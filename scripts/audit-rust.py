@@ -10,6 +10,15 @@ import subprocess
 # No patched rsa release exists for Marvin; keep this exception visible in every report.
 RSA_EXCEPTION = "RUSTSEC-2023-0071"
 
+# Scoped exception: CVE-2026-119375 (RUSTSEC-2026-0459) in the C SQLite bundled by
+# libsqlite3-sys 0.37.0. The fix exists only in libsqlite3-sys >= 0.39.0 (rusqlite 0.41);
+# no patched 0.37.x release exists. The engine pins arti-client 0.46, and tor-dirmgr (up to
+# the latest 0.48) caps rusqlite < 0.41, so the patched release cannot be selected yet.
+# The CVE is local-only: it requires the victim to open a crafted database+WAL pair. In this
+# app SQLite is used only for arti's Tor directory cache (app-generated data; no untrusted
+# database files are opened). Remove this exception as soon as arti allows rusqlite 0.41.
+SQLITE_EXCEPTION = "RUSTSEC-2026-0459"
+
 
 # Lockfile-only findings: cargo-audit scans Cargo.lock, which also lists packages of optional
 # features that are never compiled. crypto-bigint 0.5.5 comes from elliptic-curve 0.13 (p256 /
@@ -41,7 +50,7 @@ def audit(crate, report, strict):
     if not (crate / "Cargo.lock").is_file():
         raise RuntimeError(f"Missing engine Cargo.lock: {crate}")
     report.parent.mkdir(parents=True, exist_ok=True)
-    ignores = [RSA_EXCEPTION]
+    ignores = [RSA_EXCEPTION, SQLITE_EXCEPTION]
     for advisory_id, (name, version) in LOCKFILE_ONLY.items():
         if not_in_build_graph(crate, name, version):
             ignores.append(advisory_id)
@@ -74,6 +83,7 @@ def audit(crate, report, strict):
     emit("### Rust dependency audit")
     emit(f"Vulnerabilities: **{len(vulnerabilities)}**; informational warnings: **{sum(len(v) for v in warnings.values())}**.")
     emit(f"Existing scoped exception: `{RSA_EXCEPTION}` (Tor signature-verification use; not private-key decryption).")
+    emit(f"Scoped exception: `{SQLITE_EXCEPTION}` (CVE-2026-119375 in bundled SQLite; local-only crafted-DB issue, fix blocked by arti's rusqlite cap; SQLite used only for the Tor directory cache).")
     for kind, items in [("vulnerability", vulnerabilities), *warnings.items()]:
         for item in items:
             package = item["package"]

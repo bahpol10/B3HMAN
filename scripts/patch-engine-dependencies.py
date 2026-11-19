@@ -6,7 +6,8 @@ import re
 import subprocess
 import tomllib
 
-FIXES = (("quinn-proto", (0, 11), (0, 11, 18), "RUSTSEC-2026-0338"),
+FIXES = (("quinn-proto", (0, 11), (0, 11, 19), "RUSTSEC-2026-0338/0523/0524"),
+         ("quinn-udp", (0, 5), (0, 5, 16), "RUSTSEC-2026-0538"),
          ("rustls", (0, 23), (0, 23, 46), "RUSTSEC-2026-0346/0347/0348/0349 (and 0285)"),
          ("rustls-webpki", (0, 103), (0, 103, 16), "RUSTSEC-2026-0382"),
          ("webpki-roots", (1, 0), (1, 0, 10), "RUSTSEC-2026-0381"),
