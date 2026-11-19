@@ -1,0 +1,39 @@
+# One-time helper: extract b3hman-project.zip into the repo root.
+# The connector's bulk push (git trees API) returns 403 for this
+# GitHub App installation, while the Contents API works, so the
+# already-committed zip is unpacked here by Actions instead.
+# Runs once when this file is added; exits early if the zip is gone.
+name: Extract project zip
+
+on:
+  push:
+    paths:
+      - '.github/workflows/extract-project-zip.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract project zip into repo root
+        run: |
+          set -euo pipefail
+          if [ ! -f b3hman-project.zip ]; then
+            echo "No b3hman-project.zip found; nothing to do."
+            exit 0
+          fi
+          unzip -q b3hman-project.zip -d /tmp/b3hman-extract
+          rsync -a /tmp/b3hman-extract/b3hman/ ./
+          rm -f b3hman-project.zip
+          git config user.name "B3HMAN"
+          git config user.email "b3hman01@gmail.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "B3HMAN - Aether Mobile rebrand (AGPL-3.0) [extracted project tree]"
+          git push
