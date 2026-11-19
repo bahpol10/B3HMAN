@@ -19,9 +19,10 @@
 // enough to fail a release.
 //
 // FIX: declare an independent, byte-identical mirror of Maven Central (the
-// Google-hosted GCS mirror) AFTER mavenCentral(). Gradle falls through to the
-// next repository when one fails, so a 403/429/5xx from Sonatype can no longer
-// stop the build. The CI build step additionally retries download-related
+// Google-hosted GCS mirror) BEFORE mavenCentral(). Gradle does NOT fall
+// through to the next repository on a 403/429/5xx or a timeout - it fails
+// the whole resolution - so the mirror must come FIRST: artifacts resolve
+// from the mirror and Central is only a fallback. The CI build step additionally retries download-related
 // failures - and only those - see .github/workflows/build.yml.
 // ---------------------------------------------------------------------------
 pluginManagement {
@@ -33,13 +34,13 @@ pluginManagement {
                 includeGroupByRegex("androidx.*")
             }
         }
-        mavenCentral()
-        // Fallback for Maven Central: same artifacts, independent
-        // infrastructure. See the note at the top of this file.
+        // Primary source for Maven Central artifacts: same files,
+        // independent infrastructure. See the note at the top of this file.
         maven {
             name = "MavenCentralMirrorGoogle"
             url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
         }
+        mavenCentral()
         gradlePluginPortal()
     }
 }
@@ -47,13 +48,13 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        mavenCentral()
-        // Fallback for Maven Central: same artifacts, independent
-        // infrastructure. See the note at the top of this file.
+        // Primary source for Maven Central artifacts: same files,
+        // independent infrastructure. See the note at the top of this file.
         maven {
             name = "MavenCentralMirrorGoogle"
             url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
         }
+        mavenCentral()
     }
 }
 
