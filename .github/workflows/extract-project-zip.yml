@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   extract:
@@ -29,6 +28,10 @@ jobs:
           unzip -q b3hman-project.zip -d /tmp/b3hman-extract
           rsync -a /tmp/b3hman-extract/b3hman/ ./
           rm -f b3hman-project.zip
+          # Workflow files cannot be pushed by the Actions token, so
+          # leave them out of this commit; build.yml is added via web UI.
+          rm -f .github/workflows/build.yml
+          rm -rf native/aether/.github/workflows native/aether/quiche/.github/workflows
           git config user.name "B3HMAN"
           git config user.email "b3hman01@gmail.com"
           git add -A
