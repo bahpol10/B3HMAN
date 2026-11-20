@@ -28,7 +28,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -47,6 +46,8 @@ import androidx.compose.ui.unit.sp
 import com.b3hman.vpn.R
 import com.b3hman.vpn.ui.theme.B3hError
 import com.b3hman.vpn.ui.theme.B3hTeal
+import com.b3hman.vpn.ui.theme.B3hTealBright
+import com.b3hman.vpn.ui.theme.B3hTealDim
 import com.b3hman.vpn.ui.theme.Graphite800
 import com.b3hman.vpn.ui.theme.OnGraphite
 
@@ -59,15 +60,16 @@ enum class ButtonMode { IDLE, BUSY, CONNECTED, ERROR }
  * "breathed" while connected, an additive glow core, and the animated "A"
  * brand mark as the connected glyph. This fork replaces all three:
  *
- *  - **Connected = solid teal disc + a bold dark "B", with expanding teal
- *    rings and a soft glow behind it** (2026-11-20 redesign). The glyph is
- *    plain text, not an animated mark; the rings are the only ambient
- *    motion and they exist only while connected, visible and with home
- *    animations enabled.
- *  - **Idle = graphite disc + off-white power icon.** No blue anywhere: the
- *    idle accent is warm off-white, the busy/connected accent is electric
- *    teal (#00E5C0), the error accent is soft red. The old animated "A"
- *    brand mark (AetherMark.kt) was deleted with this change.
+ *  - **Connected = bright teal gradient disc + a bold dark "B", with
+ *    expanding teal rings and a soft glow behind it** (2026-11-20 redesign).
+ *    The glyph is plain text, not an animated mark; the rings are the only
+ *    ambient motion and they exist only while connected, visible and with
+ *    home animations enabled.
+ *  - **Idle = deep-teal gradient disc + off-white power icon**, with a soft
+ *    teal glow behind it so the button reads coloured in every state. No
+ *    blue anywhere: the idle accent is warm off-white, the busy/connected
+ *    accent is electric teal (#00E5C0), the error accent is soft red. The
+ *    old animated "A" brand mark (AetherMark.kt) was deleted with this change.
  *
  * The busy sweep (a 90-degree arc that spins while connecting) is kept: it
  * is functional feedback, not decoration. It follows ONLY whether the home
@@ -108,23 +110,27 @@ fun ConnectButton(
     )
 
     Box(contentAlignment = Alignment.Center, modifier = modifier.size(BUTTON_BOX)) {
-        // Connected ambience: a soft teal glow plus three rings expanding
-        // from the disc edge and fading out, staggered by a third of a cycle.
-        if (rings != null) {
-            Canvas(modifier = Modifier.size(BUTTON_BOX)) {
-                val phase = rings.value
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val minR = DISC.toPx() / 2f
-                val maxR = size.minDimension / 2f
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(B3hTeal.copy(alpha = 0.22f), Color.Transparent),
-                        center = center,
-                        radius = maxR,
+        // Ambience behind the disc: a soft teal glow in every state, plus —
+        // while connected — three rings expanding from the disc edge and
+        // fading out, staggered by a third of a cycle.
+        Canvas(modifier = Modifier.size(BUTTON_BOX)) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val minR = DISC.toPx() / 2f
+            val maxR = size.minDimension / 2f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        B3hTeal.copy(alpha = if (connected) 0.26f else 0.15f),
+                        Color.Transparent,
                     ),
-                    radius = maxR,
                     center = center,
-                )
+                    radius = maxR,
+                ),
+                radius = maxR,
+                center = center,
+            )
+            if (rings != null) {
+                val phase = rings.value
                 for (i in 0..2) {
                     val p = (phase + i / 3f) % 1f
                     drawCircle(
@@ -137,21 +143,25 @@ fun ConnectButton(
             }
         }
 
-        // The disc: solid teal when connected, graphite otherwise, with a
-        // thin hairline ring in the accent colour.
+        // The disc: bright teal gradient when connected, deep-teal gradient
+        // otherwise, with a teal ring in the accent colour.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(DISC)
                 .clip(CircleShape)
                 .background(
-                    if (connected) SolidColor(B3hTeal) else Brush.linearGradient(
-                        listOf(Graphite800, Color(0xFF131816)),
-                    ),
+                    when {
+                        connected -> Brush.linearGradient(listOf(B3hTeal, B3hTealBright))
+                        mode == ButtonMode.ERROR -> Brush.linearGradient(
+                            listOf(Graphite800, Color(0xFF131816)),
+                        )
+                        else -> Brush.linearGradient(listOf(B3hTealDim, Graphite800))
+                    },
                 )
                 .border(
-                    width = if (connected) 0.dp else 1.dp,
-                    color = if (connected) Color.Transparent else animatedAccent.copy(alpha = 0.35f),
+                    width = if (connected) 0.dp else 1.5.dp,
+                    color = if (connected) Color.Transparent else animatedAccent.copy(alpha = 0.6f),
                     shape = CircleShape,
                 )
                 .clickable(
