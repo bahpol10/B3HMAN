@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -52,28 +53,27 @@ import com.b3hman.vpn.ui.theme.OnGraphite
 enum class ButtonMode { IDLE, BUSY, CONNECTED, ERROR }
 
 /**
- * B3HMAN connect button — deliberately NOT the upstream Aether button.
+ * BAHMAN connect button — deliberately NOT the upstream Aether button.
  *
  * Upstream (Aether) had: a circular disc with a soft blue glowing halo that
  * "breathed" while connected, an additive glow core, and the animated "A"
- *    animated "A" brand mark as the connected glyph. This fork replaces all
- * three:
+ * brand mark as the connected glyph. This fork replaces all three:
  *
- *  - **No halo, no glow.** The button is a flat graphite disc with a hairline
- *    ring. It does not bloom, breathe or light up the screen around it.
- *  - **Connected = solid teal disc + a bold dark "B".** The glyph is plain
- *    text, not an animated mark; the state reads from the fill colour, not
- *    from motion.
+ *  - **Connected = solid teal disc + a bold dark "B", with expanding teal
+ *    rings and a soft glow behind it** (2026-11-20 redesign). The glyph is
+ *    plain text, not an animated mark; the rings are the only ambient
+ *    motion and they exist only while connected, visible and with home
+ *    animations enabled.
  *  - **Idle = graphite disc + off-white power icon.** No blue anywhere: the
  *    idle accent is warm off-white, the busy/connected accent is electric
  *    teal (#00E5C0), the error accent is soft red. The old animated "A"
  *    brand mark (AetherMark.kt) was deleted with this change.
  *
  * The busy sweep (a 90-degree arc that spins while connecting) is kept: it
- * is functional feedback, not decoration, and it is the only animation on
- * this button. It follows ONLY whether the home screen is on screen, so
- * switching the home animations off can never freeze the button into
- * looking hung. An idle screen subscribes to no frame callbacks at all.
+ * is functional feedback, not decoration. It follows ONLY whether the home
+ * screen is on screen, so switching the home animations off can never
+ * freeze the button into looking hung. An idle screen subscribes to no
+ * frame callbacks at all.
  */
 @Composable
 fun ConnectButton(
@@ -94,6 +94,9 @@ fun ConnectButton(
 
     val homeVisible = LocalHomeVisible.current
     val spin = if (busy && homeVisible) rememberSpin() else null
+    // Connected rings: composed only while connected, visible and with home
+    // animations enabled — an idle or hidden screen runs no animation.
+    val rings = if (connected && homeVisible && LocalHomeAnimationsEnabled.current) rememberRingPhase() else null
 
     val interaction = remember { MutableInteractionSource() }
     val actionLabel = stringResource(
@@ -105,8 +108,37 @@ fun ConnectButton(
     )
 
     Box(contentAlignment = Alignment.Center, modifier = modifier.size(BUTTON_BOX)) {
-        // Flat disc: solid teal when connected, graphite otherwise, with a
-        // thin hairline ring in the accent colour. No halo, no glow.
+        // Connected ambience: a soft teal glow plus three rings expanding
+        // from the disc edge and fading out, staggered by a third of a cycle.
+        if (rings != null) {
+            Canvas(modifier = Modifier.size(BUTTON_BOX)) {
+                val phase = rings.value
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val minR = DISC.toPx() / 2f
+                val maxR = size.minDimension / 2f
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(B3hTeal.copy(alpha = 0.22f), Color.Transparent),
+                        center = center,
+                        radius = maxR,
+                    ),
+                    radius = maxR,
+                    center = center,
+                )
+                for (i in 0..2) {
+                    val p = (phase + i / 3f) % 1f
+                    drawCircle(
+                        color = B3hTeal.copy(alpha = (1f - p) * 0.40f),
+                        radius = minR + (maxR - minR) * p,
+                        center = center,
+                        style = Stroke(width = 2.dp.toPx()),
+                    )
+                }
+            }
+        }
+
+        // The disc: solid teal when connected, graphite otherwise, with a
+        // thin hairline ring in the accent colour.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -151,7 +183,7 @@ fun ConnectButton(
             }
 
             if (connected) {
-                // The B3HMAN mark: a bold dark "B" on the solid teal disc.
+                // The BAHMAN mark: a bold dark "B" on the solid teal disc.
                 Text(
                     text = "B",
                     color = Color(0xFF0C0F0E),
@@ -190,6 +222,16 @@ private fun rememberSpin(): androidx.compose.runtime.State<Float> =
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(1_200, easing = LinearEasing)),
         label = "spinAngle",
+    )
+
+/** The connected-ring cycle (0..1). Composed only while connected. */
+@Composable
+private fun rememberRingPhase(): androidx.compose.runtime.State<Float> =
+    rememberInfiniteTransition(label = "rings").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2_400, easing = LinearEasing)),
+        label = "ringPhase",
     )
 
 // ---------------------------------------------------------------- geometry

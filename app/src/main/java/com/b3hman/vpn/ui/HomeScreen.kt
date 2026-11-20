@@ -1,7 +1,11 @@
 package com.b3hman.vpn.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,29 +13,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.b3hman.vpn.R
 import com.b3hman.vpn.ai.AiSession
@@ -46,26 +54,33 @@ import com.b3hman.vpn.ui.ai.AiHostContext
 import com.b3hman.vpn.ui.ai.LocalAiHost
 import com.b3hman.vpn.ui.components.ButtonMode
 import com.b3hman.vpn.ui.components.ConnectButton
+import com.b3hman.vpn.ui.components.ConnectionCard
 import com.b3hman.vpn.ui.components.HomeSettingsHost
 import com.b3hman.vpn.ui.settings.SettingsHost
 import com.b3hman.vpn.ui.settings.SettingsRoute
+import com.b3hman.vpn.ui.theme.B3hAmber
 import com.b3hman.vpn.ui.theme.B3hTeal
-import kotlinx.coroutines.delay
+import com.b3hman.vpn.ui.theme.B3hTealBright
+import com.b3hman.vpn.ui.theme.Graphite700
+import com.b3hman.vpn.ui.theme.Graphite850
+import com.b3hman.vpn.ui.theme.Graphite950
+import com.b3hman.vpn.ui.theme.OnGraphite
 
 /**
- * B3HMAN home — minimal, Aether-only (simplified 2026-11-19).
+ * BAHMAN home — modern redesign (2026-11-20), Aether-only.
  *
- * Deliberately only four things on screen:
- *   1. the app name, small, top-left
- *   2. one compact mode row — the six Aether engine modes as chips
- *   3. the big connect disc
- *   4. one status line (Disconnected / Connecting / Connected + session time)
+ * Layout, top to bottom:
+ *   1. the app name + settings gear
+ *   2. the six Aether engine modes as selectable cards (one scrollable row)
+ *   3. the big connect disc (pulsing rings + glow while connected)
+ *   4. the connection card: status, session timer, exit-IP pill, live
+ *      download/upload speeds, pipeline and latency
  *
- * Everything else that used to live here is gone: the navigation drawer, the
- * preset selector and its import/export menu, the status card (pipeline, IP,
- * speed strip, latency), the tagline, the top AI/tune shortcuts and the
- * What's-New popup. Settings is one gear icon, top-right. The engine modes
- * themselves are unchanged — [TransportBackend] still carries all six.
+ * The backdrop is a static graphite gradient with two soft radial glows
+ * (teal behind the connect area, a whisper of amber low) — drawn once,
+ * never animated, so it costs no frame budget. The custom-config / Xray UI
+ * stays removed; the engine modes themselves are unchanged —
+ * [TransportBackend] still carries all six.
  *
  * The preset parameters below are kept only so [com.b3hman.vpn.MainActivity]
  * keeps compiling unchanged; nothing on this screen uses them any more.
@@ -98,7 +113,7 @@ fun HomeScreen(
             openChat = { route = SettingsRoute.AI_CHAT }),
     ) {
         com.b3hman.vpn.ui.components.HomeSettingsHost(route == null, modifier.fillMaxSize(), home = {
-            HomeSurface(state, profile, connectedSince, onProfileChange, onToggleConnection,
+            HomeSurface(state, profile, connectedSince, ipInfo, ipLoading, onProfileChange, onToggleConnection,
                 onOpenSettings = { route = SettingsRoute.HOME })
         }, settings = {
             route?.let { SettingsHost(it, state, profile, onProfileChange, { route = null }) }
@@ -111,6 +126,8 @@ private fun HomeSurface(
     state: ConnectionState,
     profile: ConnectionProfile,
     connectedSince: Long?,
+    ipInfo: IpEndpoint?,
+    ipLoading: Boolean,
     onProfileChange: (ConnectionProfile) -> Unit,
     onToggleConnection: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -124,94 +141,150 @@ private fun HomeSurface(
     }
     val locked = state.isConnected || state.isBusy
 
-    // Session clock: ticks once a second only to repaint the status line.
-    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(connectedSince) {
-        while (true) {
-            delay(1000)
-            nowMs = System.currentTimeMillis()
-        }
-    }
-    val statusLine = when {
-        state.isConnected && connectedSince != null -> {
-            val secs = ((nowMs - connectedSince) / 1000).coerceAtLeast(0)
-            "${stringResource(R.string.state_connected)} · %02d:%02d:%02d".format(secs / 3600, (secs / 60) % 60, secs % 60)
-        }
-        else -> stateTitle(state)
+    val caption = when {
+        state.isConnected -> stringResource(R.string.tap_to_disconnect)
+        state is ConnectionState.Error -> state.message
+        state.isBusy -> ""
+        else -> stringResource(R.string.tap_to_connect)
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
+            .background(
+                Brush.verticalGradient(
+                    listOf(Graphite950, Color(0xFF0E1512), Graphite950),
+                ),
             )
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = onOpenSettings) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = stringResource(R.string.settings_title),
-                    tint = MaterialTheme.colorScheme.onBackground,
+            .drawBehind {
+                // Static ambient glows: a teal wash behind the connect area
+                // and a whisper of amber low on the screen. Drawn once per
+                // layout — no animation, no per-frame cost.
+                val tealCenter = Offset(size.width / 2f, size.height * 0.40f)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(B3hTeal.copy(alpha = 0.13f), Color.Transparent),
+                        center = tealCenter,
+                        radius = size.width * 0.80f,
+                    ),
+                    radius = size.width * 0.80f,
+                    center = tealCenter,
                 )
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        // The six Aether engine modes, one compact scrollable chip row.
-        Row(
+                val amberCenter = Offset(size.width * 0.88f, size.height * 0.96f)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(B3hAmber.copy(alpha = 0.05f), Color.Transparent),
+                        center = amberCenter,
+                        radius = size.width * 0.65f,
+                    ),
+                    radius = size.width * 0.65f,
+                    center = amberCenter,
+                )
+            },
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TransportBackend.entries.forEach { backend ->
-                val selected = profile.backend == backend
-                Surface(
-                    onClick = { if (!locked) onProfileChange(profile.copy(backend = backend)) },
-                    enabled = !locked,
-                    shape = RoundedCornerShape(50),
-                    color = if (selected) B3hTeal else MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Text(
-                        text = backend.pipelineLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (selected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = stringResource(R.string.settings_title),
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
+
+            Spacer(Modifier.height(20.dp))
+
+            // The six Aether engine modes as selectable cards.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TransportBackend.entries.forEach { backend ->
+                    val selected = profile.backend == backend
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (selected) {
+                                    Brush.linearGradient(listOf(B3hTeal, B3hTealBright))
+                                } else {
+                                    SolidColor(Graphite850)
+                                },
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (selected) Color.Transparent else Graphite700,
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                            .clickable(enabled = !locked) {
+                                onProfileChange(profile.copy(backend = backend))
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (selected) Color(0xFF0C0F0E) else B3hTeal.copy(alpha = 0.55f),
+                                    ),
+                            )
+                            Text(
+                                text = backend.pipelineLabel,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (selected) Color(0xFF0C0F0E) else OnGraphite,
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            ConnectButton(
+                mode = mode,
+                onClick = onToggleConnection,
+                stateText = stateTitle(state),
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            ConnectionCard(
+                connected = state.isConnected,
+                statusTitle = stateTitle(state),
+                statusCaption = caption,
+                connectedSince = connectedSince,
+                ipInfo = ipInfo,
+                ipLoading = ipLoading,
+                error = state is ConnectionState.Error,
+                backend = profile.backend,
+            )
+
+            Spacer(Modifier.height(12.dp))
         }
-
-        Spacer(Modifier.height(32.dp))
-
-        ConnectButton(
-            mode = mode,
-            onClick = onToggleConnection,
-            stateText = stateTitle(state),
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            text = statusLine,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.weight(1f))
     }
 }
 

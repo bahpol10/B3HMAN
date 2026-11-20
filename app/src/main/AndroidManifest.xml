@@ -99,7 +99,7 @@
             </intent-filter>
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Runs the B3HMAN VPN tunnel (Aether core) while active" />
+                android:value="Runs the BAHMAN VPN tunnel (Aether core) while active" />
         </service>
 
         <!-- Quick Settings tile: one-tap connect/disconnect from the shade. -->

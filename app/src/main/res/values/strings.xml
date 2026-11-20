@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">B3HMAN</string>
+    <string name="app_name">BAHMAN</string>
     <string name="tagline">One tap, your tunnel.</string>
 
     <string name="advanced">Advanced settings</string>
@@ -42,8 +42,8 @@
     <string name="reconnect_attempt">Attempt %1$d of %2$d</string>
 
     <string name="notif_channel">VPN status</string>
-    <string name="notif_channel_desc">Shows the B3HMAN connection status</string>
-    <string name="notif_title">B3HMAN</string>
+    <string name="notif_channel_desc">Shows the BAHMAN connection status</string>
+    <string name="notif_title">BAHMAN</string>
     <!--
       1.3.1, issue #20: the notification's action BUTTON used to be labelled with
       state_disconnecting ("Disconnecting…"), so the ongoing notification read
@@ -96,7 +96,7 @@
     <string name="advanced_open">Open advanced settings</string>
 
     <!-- Quick Settings tile -->
-    <string name="qs_tile_label">B3HMAN</string>
+    <string name="qs_tile_label">BAHMAN</string>
 
     <!-- Share VPN panel -->
     <string name="share_title">Share VPN</string>
@@ -195,8 +195,8 @@
     <string name="about_patch_level">Build: %1$s</string>
     <!-- 1.2.9-r3 (audit F-1 mitigation): is this the build we published? -->
     <string name="about_signer">Signing certificate: %1$s</string>
-    <string name="about_signer_ok">Matches the pinned B3HMAN release certificate.</string>
-    <string name="about_signer_bad">This copy was signed with a different certificate than the pinned B3HMAN release certificate. A VPN app sees all of your traffic — reinstall from the official B3HMAN release page.</string>
+    <string name="about_signer_ok">Matches the pinned BAHMAN release certificate.</string>
+    <string name="about_signer_bad">This copy was signed with a different certificate than the pinned BAHMAN release certificate. A VPN app sees all of your traffic — reinstall from the official BAHMAN release page.</string>
     <string name="about_signer_unpinned">No official fingerprint is compiled into this build, so it cannot be checked here.</string>
     <string name="about_signer_unknown">The system did not report a signing certificate for this app.</string>
     <string name="about_apk_hash">APK SHA-256: %1$s</string>
@@ -237,7 +237,7 @@
     <string name="dns_hint">1.1.1.1, 1.0.0.1</string>
     <string name="dns_help">Leave empty for the engine default (1.1.1.1, 1.0.0.1). Invalid entries are ignored.</string>
     <!-- Feature merge: home-screen widget, onboarding, ping, crash report -->
-    <string name="widget_desc">Connect or disconnect B3HMAN with one tap</string>
+    <string name="widget_desc">Connect or disconnect BAHMAN with one tap</string>
     <string name="widget_toggle_desc">Toggle connection</string>
     <string name="ping_label">Ping</string>
     <string name="ping_measuring">Measuring…</string>
@@ -246,13 +246,13 @@
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_start">Get started</string>
-    <string name="onboarding_title_1">Welcome to B3HMAN</string>
+    <string name="onboarding_title_1">Welcome to BAHMAN</string>
     <string name="onboarding_body_1">A fast, secure tunnel that beats censorship. One tap connects you through MASQUE, WireGuard or WARP×2.</string>
     <string name="onboarding_title_2">Smart protocol selection</string>
     <string name="onboarding_body_2">Smart mode analyzes your network and picks the protocol that actually works, with anti-DPI obfuscation when needed.</string>
     <string name="onboarding_title_3">Private by design</string>
     <string name="onboarding_body_3">No accounts, no logs, no trackers. Android will ask for VPN permission on your first connect; that is the system keeping you in control.</string>
-    <string name="crash_title">B3HMAN stopped unexpectedly</string>
+    <string name="crash_title">BAHMAN stopped unexpectedly</string>
     <string name="crash_subtitle">The details below were saved by the crash handler. You can copy them into a bug report.</string>
     <string name="crash_copy">Copy details</string>
     <string name="crash_copied">Copied</string>
@@ -368,7 +368,7 @@
          sentence into a right-to-left screen, which is how a localised app
          rots one string at a time.
          ================================================================= -->
-    <string name="ai_title">B3HMAN AI</string>
+    <string name="ai_title">BAHMAN AI</string>
     <string name="ai_subtitle">Gemini inside the app: explanations, tuning and chat</string>
     <string name="ai_badge">AI</string>
     <string name="cat_ai">Assistant</string>
@@ -420,13 +420,13 @@
     <string name="ai_chat_open">Chat with Gemini</string>
     <string name="ai_chat_subtitle">Ask anything, or say what you want changed</string>
     <string name="ai_chat_model">Model: %1$s</string>
-    <string name="ai_chat_empty_title">Hi, I am B3HMAN AI</string>
+    <string name="ai_chat_empty_title">Hi, I am BAHMAN AI</string>
     <string name="ai_chat_empty_body">I can explain any setting in this app, read this session\'s log and propose tuning, or just answer a question.</string>
     <string name="ai_chat_suggest_1">Why is my connection slow right now?</string>
     <string name="ai_chat_suggest_2">Which protocol should I use on mobile data?</string>
     <string name="ai_chat_suggest_3">Explain MTU and pick the best one for me</string>
     <string name="ai_chat_suggest_4">Make the tunnel harder to detect</string>
-    <string name="ai_chat_input_hint">Ask B3HMAN AI…</string>
+    <string name="ai_chat_input_hint">Ask BAHMAN AI…</string>
     <string name="ai_chat_send">Send</string>
     <string name="ai_chat_stop">Stop</string>
     <string name="ai_chat_clear">Clear the conversation</string>
@@ -598,7 +598,7 @@
 
     <!-- Battery optimisation hint (1.3.1, issue #5) -->
     <string name="battery_title">Allow background running</string>
-    <string name="battery_desc">Android is still allowed to suspend B3HMAN. That is what drops the tunnel when the screen goes off — it still says connected but nothing loads. Tap to exempt it.</string>
+    <string name="battery_desc">Android is still allowed to suspend BAHMAN. That is what drops the tunnel when the screen goes off — it still says connected but nothing loads. Tap to exempt it.</string>
 
     <!-- Custom ECHConfigList (1.3.1, issue #44) -->
     <string name="ech_config_label">ECHConfigList (base64, optional)</string>
@@ -674,7 +674,7 @@
     <string name="share_ip_label">Phone IP address</string>
     <string name="share_pac_label">Automatic proxy (PAC) URL — easiest, fail‑closed</string>
     <string name="share_copy_all">Copy all details</string>
-    <string name="share_copy_all_label">B3HMAN share details</string>
+    <string name="share_copy_all_label">BAHMAN share details</string>
     <string name="share_copied_all">All details copied</string>
     <string name="share_steps_title">How to connect</string>
     <string name="share_step_home_1">Make sure the other device is on the same Wi‑Fi as this phone.</string>
